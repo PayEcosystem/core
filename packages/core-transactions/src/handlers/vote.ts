@@ -41,7 +41,7 @@ export class VoteTransactionHandler extends TransactionHandler {
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
-    ): boolean {
+    ): void {
         const { data }: Interfaces.ITransaction = transaction;
         const vote: string = data.asset.votes[0];
 
@@ -67,7 +67,7 @@ export class VoteTransactionHandler extends TransactionHandler {
             throw new VotedForResignedDelegateError(vote);
         }
 
-        return super.canBeApplied(transaction, wallet, databaseWalletManager);
+        super.canBeApplied(transaction, wallet, databaseWalletManager);
     }
 
     public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {
@@ -91,7 +91,7 @@ export class VoteTransactionHandler extends TransactionHandler {
         return true;
     }
 
-    protected applyToSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
+    public applyToSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         super.applyToSender(transaction, walletManager);
 
         const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
@@ -104,7 +104,7 @@ export class VoteTransactionHandler extends TransactionHandler {
         }
     }
 
-    protected revertForSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
+    public revertForSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         super.revertForSender(transaction, walletManager);
 
         const sender = walletManager.findByPublicKey(transaction.data.senderPublicKey);
@@ -117,11 +117,9 @@ export class VoteTransactionHandler extends TransactionHandler {
         }
     }
 
-    protected applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-        return;
+    public applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
     }
 
-    protected revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-        return;
+    public revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
     }
 }

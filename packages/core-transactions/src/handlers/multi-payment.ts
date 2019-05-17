@@ -15,15 +15,13 @@ export class MultiPaymentTransactionHandler extends TransactionHandler {
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
-    ): boolean {
-        return super.canBeApplied(transaction, wallet, databaseWalletManager);
+    ): void {
+        super.canBeApplied(transaction, wallet, databaseWalletManager);
     }
 
-    protected applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-        return;
+    public applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
     }
 
-    protected revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-        return;
+    public revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
     }
 }

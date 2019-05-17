@@ -19,10 +19,10 @@ export class TransferTransactionHandler extends TransactionHandler {
 
     public canBeApplied(
         transaction: Interfaces.ITransaction,
-        wallet: State.IWallet,
-        databaseWalletManager: State.IWalletManager,
-    ): boolean {
-        return super.canBeApplied(transaction, wallet, databaseWalletManager);
+        sender: State.IWallet,
+        databaseWalletManager?: State.IWalletManager,
+    ): void {
+        super.canBeApplied(transaction, sender, databaseWalletManager);
     }
 
     public hasVendorField(): boolean {
@@ -48,12 +48,12 @@ export class TransferTransactionHandler extends TransactionHandler {
         return true;
     }
 
-    protected applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
+    public applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         const recipient: State.IWallet = walletManager.findByAddress(transaction.data.recipientId);
         recipient.balance = recipient.balance.plus(transaction.data.amount);
     }
 
-    protected revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
+    public revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         const recipient: State.IWallet = walletManager.findByAddress(transaction.data.recipientId);
         recipient.balance = recipient.balance.minus(transaction.data.amount);
     }

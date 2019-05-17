@@ -45,7 +45,7 @@ export class DelegateRegistrationTransactionHandler extends TransactionHandler {
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
-    ): boolean {
+    ): void {
         const { data }: Interfaces.ITransaction = transaction;
 
         if (databaseWalletManager.findByPublicKey(data.senderPublicKey).multisignature) {
@@ -65,7 +65,7 @@ export class DelegateRegistrationTransactionHandler extends TransactionHandler {
             throw new WalletUsernameAlreadyRegisteredError(username);
         }
 
-        return super.canBeApplied(transaction, wallet, databaseWalletManager);
+        super.canBeApplied(transaction, wallet, databaseWalletManager);
     }
 
     public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {
@@ -110,7 +110,7 @@ export class DelegateRegistrationTransactionHandler extends TransactionHandler {
         return true;
     }
 
-    protected applyToSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
+    public applyToSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         super.applyToSender(transaction, walletManager);
 
         const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
@@ -119,7 +119,7 @@ export class DelegateRegistrationTransactionHandler extends TransactionHandler {
         walletManager.reindex(sender);
     }
 
-    protected revertForSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
+    public revertForSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         super.revertForSender(transaction, walletManager);
 
         const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
@@ -128,11 +128,9 @@ export class DelegateRegistrationTransactionHandler extends TransactionHandler {
         sender.username = undefined;
     }
 
-    protected applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-        return;
+    public applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
     }
 
-    protected revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-        return;
+    public revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
     }
 }

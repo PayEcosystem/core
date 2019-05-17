@@ -274,29 +274,26 @@ export class Connection implements TransactionPool.IConnection {
                 : undefined;
 
             if (recipientWallet) {
-                transactionHandler.applyToRecipientInPool(transaction, this.walletManager);
+                transactionHandler.applyToRecipient(transaction, this.walletManager);
             }
 
             if (exists) {
                 this.removeTransaction(transaction);
             } else if (senderWallet) {
-                // TODO: rework error handling
                 try {
                     transactionHandler.canBeApplied(transaction, senderWallet, this.databaseService.walletManager);
+                    transactionHandler.applyToSender(transaction, this.walletManager);
                 } catch (error) {
                     this.purgeByPublicKey(data.senderPublicKey);
                     this.blockSender(data.senderPublicKey);
 
                     this.logger.error(
-                        `CanApply transaction test failed on acceptChainedBlock() in transaction pool for transaction id:${
-                        data.id
-                        } due to ${error.message}. Possible double spending attack`,
+                        `Cannot apply transaction ${transaction.id} when trying to accept ` +
+                        `block ${block.data.id}: ${error.message}`
                     );
 
                     return;
                 }
-
-                transactionHandler.applyToSenderInPool(transaction, this.walletManager);
             }
 
             if (
@@ -342,7 +339,7 @@ export class Connection implements TransactionPool.IConnection {
             try {
                 const transactionHandler: Handlers.TransactionHandler = Handlers.Registry.get(transaction.type);
                 transactionHandler.canBeApplied(transaction, senderWallet, this.databaseService.walletManager);
-                transactionHandler.applyToSenderInPool(transaction, this.walletManager);
+                transactionHandler.applyToSender(transaction, this.walletManager);
             } catch (error) {
                 this.logger.error(`BuildWallets from pool: ${error.message}`);
 
@@ -438,8 +435,8 @@ export class Connection implements TransactionPool.IConnection {
         this.memory.remember(transaction, this.options.maxTransactionAge);
 
         try {
-            this.walletManager.throwIfApplyingFails(transaction);
-            Handlers.Registry.get(transaction.type).applyToSenderInPool(transaction, this.walletManager);
+            this.walletManager.senderIsKnownAndTrxCanBeApplied(transaction);
+            Handlers.Registry.get(transaction.type).applyToSender(transaction, this.walletManager);
         } catch (error) {
             this.logger.error(error.message);
 

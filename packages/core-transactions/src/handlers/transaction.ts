@@ -2,7 +2,7 @@
 // tslint:disable:member-ordering
 
 import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
-import { Enums, Interfaces, Managers, Transactions } from "@arkecosystem/crypto";
+import { Enums, Interfaces, Managers, Transactions, Utils } from "@arkecosystem/crypto";
 import {
     InsufficientBalanceError,
     InvalidMultiSignatureError,
@@ -37,39 +37,37 @@ export abstract class TransactionHandler implements ITransactionHandler {
 
     public canBeApplied(
         transaction: Interfaces.ITransaction,
-        wallet: State.IWallet,
-        databaseWalletManager: State.IWalletManager,
-    ): boolean {
-        const { data }: Interfaces.ITransaction = transaction;
+        sender: State.IWallet,
+        databaseWalletManager?: State.IWalletManager,
+    ): void {
+        const data: Interfaces.ITransactionData = transaction.data;
 
-        if (data.version > 1 && !data.nonce.isEqualTo(wallet.nonce.plus(1))) {
-            throw new UnexpectedNonceError(data.nonce, wallet.nonce.plus(1));
+        if (Utils.isException(data)) {
+            return;
         }
 
-        if (
-            wallet.balance
-                .minus(data.amount)
-                .minus(data.fee)
-                .isLessThan(0)
-        ) {
+        if (data.version > 1 && data.nonce.isLessThanOrEqualTo(sender.nonce)) {
+            throw new UnexpectedNonceError(data.nonce, sender.nonce, false);
+        }
+
+        if (sender.balance.minus(data.amount).minus(data.fee).isNegative()) {
             throw new InsufficientBalanceError();
         }
 
-        if (data.senderPublicKey !== wallet.publicKey) {
+        if (data.senderPublicKey !== sender.publicKey) {
             throw new SenderWalletMismatchError();
         }
 
-        if (wallet.secondPublicKey) {
+        if (sender.secondPublicKey) {
             // Ensure the database wallet already has a 2nd signature, in case we checked a pool wallet.
-            const databaseWallet: State.IWallet = databaseWalletManager.findByPublicKey(
-                transaction.data.senderPublicKey,
-            );
-
-            if (!databaseWallet.secondPublicKey) {
-                throw new UnexpectedSecondSignatureError();
+            if (databaseWalletManager) {
+                const dbSender: State.IWallet = databaseWalletManager.findByPublicKey(data.senderPublicKey);
+                if (!dbSender.secondPublicKey) {
+                    throw new UnexpectedSecondSignatureError();
+                }
             }
 
-            if (!Transactions.Verifier.verifySecondSignature(data, wallet.secondPublicKey)) {
+            if (!Transactions.Verifier.verifySecondSignature(data, sender.secondPublicKey)) {
                 throw new InvalidSecondSignatureError();
             }
         } else if (data.secondSignature || data.signSignature) {
@@ -81,23 +79,21 @@ export abstract class TransactionHandler implements ITransactionHandler {
             }
         }
 
-        if (wallet.multisignature) {
+        if (sender.multisignature) {
             // Ensure the database wallet already has a multi signature, in case we checked a pool wallet.
-            const databaseWallet: State.IWallet = databaseWalletManager.findByPublicKey(
-                transaction.data.senderPublicKey,
-            );
-
-            if (!databaseWallet.multisignature) {
-                throw new UnexpectedMultiSignatureError();
+            if (databaseWalletManager) {
+                const dbSender: State.IWallet = databaseWalletManager.findByPublicKey(data.senderPublicKey);
+                if (!dbSender.multisignature) {
+                    throw new UnexpectedMultiSignatureError();
+                }
             }
-            if (!wallet.verifySignatures(data, wallet.multisignature)) {
+
+            if (!sender.verifySignatures(data, sender.multisignature)) {
                 throw new InvalidMultiSignatureError();
             }
         } else if (transaction.type !== Enums.TransactionTypes.MultiSignature && transaction.data.signatures) {
             throw new UnexpectedMultiSignatureError();
         }
-
-        return true;
     }
 
     public apply(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
@@ -110,26 +106,50 @@ export abstract class TransactionHandler implements ITransactionHandler {
         this.revertForRecipient(transaction, walletManager);
     }
 
-    protected applyToSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
+    public applyToSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
-        sender.balance = sender.balance.minus(transaction.data.amount).minus(transaction.data.fee);
-        sender.incrementNonce();
+        const d: Interfaces.ITransactionData = transaction.data;
+
+        if (Utils.isException(d)) {
+            walletManager.logger.warn(
+                `Transaction forcibly applied as an exception: ${transaction.id}.`
+            );
+        }
+
+        this.canBeApplied(transaction, sender);
+
+        const newBalance: Utils.BigNumber = sender.balance.minus(d.amount).minus(d.fee);
+        if (newBalance.isNegative()) {
+            throw new InsufficientBalanceError();
+        }
+
+        if (d.version > 1) {
+            if (!sender.nonce.plus(1).isEqualTo(d.nonce)) {
+                throw new UnexpectedNonceError(d.nonce, sender.nonce, false);
+            }
+
+            sender.nonce = d.nonce;
+        }
+
+        sender.balance = newBalance;
     }
 
-    protected revertForSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
+    public revertForSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
-        sender.balance = sender.balance.plus(transaction.data.amount).plus(transaction.data.fee);
-        sender.decrementNonce();
+        const d: Interfaces.ITransactionData = transaction.data;
+
+        sender.balance = sender.balance.plus(d.amount).plus(d.fee);
+
+        if (!sender.nonce.isEqualTo(d.nonce)) {
+            throw new UnexpectedNonceError(d.nonce, sender.nonce, true);
+        }
+
+        sender.nonce = sender.nonce.minus(1);
     }
 
-    protected abstract applyToRecipient(
-        transaction: Interfaces.ITransaction,
-        walletManager: State.IWalletManager,
-    ): void;
-    protected abstract revertForRecipient(
-        transaction: Interfaces.ITransaction,
-        walletManager: State.IWalletManager,
-    ): void;
+    public abstract applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void;
+
+    public abstract revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void;
 
     /**
      * Database Service
@@ -152,28 +172,6 @@ export abstract class TransactionHandler implements ITransactionHandler {
         );
 
         return false;
-    }
-
-    public applyToSenderInPool(transaction: Interfaces.ITransaction, poolWalletManager: State.IWalletManager): void {
-        // TOOD: this is working around the fact that the tx pool needs to increment the nonce
-        // before applying it, but it's not exactly the best solution.
-        poolWalletManager.findByPublicKey(transaction.data.senderPublicKey).decrementNonce();
-        this.applyToSender(transaction, poolWalletManager);
-    }
-
-    public revertForSenderInPool(transaction: Interfaces.ITransaction, poolWalletManager: State.IWalletManager): void {
-        this.revertForSender(transaction, poolWalletManager);
-    }
-
-    public applyToRecipientInPool(transaction: Interfaces.ITransaction, poolWalletManager: State.IWalletManager): void {
-        this.applyToRecipient(transaction, poolWalletManager);
-    }
-
-    public revertForRecipientInPool(
-        transaction: Interfaces.ITransaction,
-        poolWalletManager: State.IWalletManager,
-    ): void {
-        this.revertForRecipient(transaction, poolWalletManager);
     }
 
     protected typeFromSenderAlreadyInPool(

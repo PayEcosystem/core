@@ -12,7 +12,7 @@ export interface ITransactionHandler {
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
-    ): boolean;
+    ): void;
     apply(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void;
     revert(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void;
 
