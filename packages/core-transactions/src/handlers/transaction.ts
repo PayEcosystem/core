@@ -104,9 +104,9 @@ export abstract class TransactionHandler implements ITransactionHandler {
 
     public applyToSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
-        const d: Interfaces.ITransactionData = transaction.data;
+        const data: Interfaces.ITransactionData = transaction.data;
 
-        if (Utils.isException(d)) {
+        if (Utils.isException(data)) {
             walletManager.logger.warn(
                 `Transaction forcibly applied as an exception: ${transaction.id}.`
             );
@@ -114,17 +114,17 @@ export abstract class TransactionHandler implements ITransactionHandler {
 
         this.canBeApplied(transaction, sender, walletManager);
 
-        const newBalance: Utils.BigNumber = sender.balance.minus(d.amount).minus(d.fee);
+        const newBalance: Utils.BigNumber = sender.balance.minus(data.amount).minus(data.fee);
         if (newBalance.isNegative()) {
             throw new InsufficientBalanceError();
         }
 
-        if (d.version > 1) {
-            if (!sender.nonce.plus(1).isEqualTo(d.nonce)) {
-                throw new UnexpectedNonceError(d.nonce, sender.nonce, false);
+        if (data.version > 1) {
+            if (!sender.nonce.plus(1).isEqualTo(data.nonce)) {
+                throw new UnexpectedNonceError(data.nonce, sender.nonce, false);
             }
 
-            sender.nonce = d.nonce;
+            sender.nonce = data.nonce;
         }
 
         sender.balance = newBalance;
@@ -132,12 +132,12 @@ export abstract class TransactionHandler implements ITransactionHandler {
 
     public revertForSender(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
         const sender: State.IWallet = walletManager.findByPublicKey(transaction.data.senderPublicKey);
-        const d: Interfaces.ITransactionData = transaction.data;
+        const data: Interfaces.ITransactionData = transaction.data;
 
-        sender.balance = sender.balance.plus(d.amount).plus(d.fee);
+        sender.balance = sender.balance.plus(data.amount).plus(data.fee);
 
-        if (!sender.nonce.isEqualTo(d.nonce)) {
-            throw new UnexpectedNonceError(d.nonce, sender.nonce, true);
+        if (!sender.nonce.isEqualTo(data.nonce)) {
+            throw new UnexpectedNonceError(data.nonce, sender.nonce, true);
         }
 
         sender.nonce = sender.nonce.minus(1);
