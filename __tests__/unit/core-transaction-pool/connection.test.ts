@@ -5,7 +5,7 @@ import { state } from "./mocks/state";
 
 import { Wallets } from "@arkecosystem/core-state";
 import { Handlers } from "@arkecosystem/core-transactions";
-import { Blocks, Constants, Enums, Interfaces, Managers, Transactions, Utils } from "@arkecosystem/crypto";
+import { Blocks, Constants, Enums, Identities, Interfaces, Managers, Transactions, Utils } from "@arkecosystem/crypto";
 import { dato } from "@faustbrian/dato";
 import cloneDeep from "lodash.clonedeep";
 import shuffle from "lodash.shuffle";
@@ -180,6 +180,10 @@ describe("Connection", () => {
         it("should add the transactions to the pool", () => {
             expect(connection.getPoolSize()).toBe(0);
 
+            const wallet = new Wallets.Wallet(Identities.Address.fromPublicKey(mockData.dummy1.data.senderPublicKey));
+            wallet.balance = Utils.BigNumber.make(1e12);
+            connection.walletManager.reindex(wallet);
+
             connection.addTransactions([mockData.dummy1, mockData.dummy2]);
 
             expect(connection.getPoolSize()).toBe(2);
@@ -208,9 +212,6 @@ describe("Connection", () => {
 
     describe("addTransactions with expiration", () => {
         beforeAll(() => {
-            const mockWallet = new Wallets.Wallet(delegates[0].address);
-
-            jest.spyOn(connection.walletManager, "findByPublicKey").mockReturnValue(mockWallet);
             jest.spyOn(connection.walletManager, "senderIsKnownAndTrxCanBeApplied").mockReturnValue();
         });
         afterAll(() => {
@@ -233,20 +234,25 @@ describe("Connection", () => {
 
             const transactions: Interfaces.ITransaction[] = [];
 
-            transactions.push(Transactions.TransactionFactory.fromData(cloneDeep(mockData.dummyExp1.data)));
-            transactions[transactions.length - 1].data.expiration = expiration;
+            transactions[0] = Transactions.TransactionFactory.fromData(cloneDeep(mockData.dummyExp1.data));
+            transactions[0].data.expiration = expiration;
 
-            transactions.push(Transactions.TransactionFactory.fromData(cloneDeep(mockData.dummy1.data)));
+            transactions[1] = mockData.dummy1;
 
-            // Workaround: Increase balance of sender wallet to succeed
-            const insufficientBalanceTx: any = Transactions.TransactionFactory.fromData(
-                cloneDeep(mockData.dummyExp2.data),
-            );
-            insufficientBalanceTx.data.expiration = expiration;
-            transactions.push(insufficientBalanceTx);
+            for (const transaction of transactions) {
+                const address = Identities.Address.fromPublicKey(transaction.data.senderPublicKey);
+                const wallet = new Wallets.Wallet(address);
+                wallet.balance = Utils.BigNumber.make(1e12);
+                wallet.nonce = transaction.data.nonce.minus(1);
+                connection.walletManager.reindex(wallet);
+            }
 
-            transactions.push(mockData.dummy2);
+            transactions[2] = Transactions.TransactionFactory.fromData(cloneDeep(mockData.dummyExp2.data));
+            transactions[2].data.expiration = expiration;
 
+            transactions[3] = mockData.dummy2;
+
+            console.error(JSON.stringify(transactions, null, 4));
             const { added, notAdded } = connection.addTransactions(transactions);
 
             expect(added).toHaveLength(4);
