@@ -38,7 +38,7 @@ export abstract class TransactionHandler implements ITransactionHandler {
     public canBeApplied(
         transaction: Interfaces.ITransaction,
         sender: State.IWallet,
-        databaseWalletManager?: State.IWalletManager,
+        databaseWalletManager: State.IWalletManager,
     ): void {
         const data: Interfaces.ITransactionData = transaction.data;
 
@@ -60,11 +60,9 @@ export abstract class TransactionHandler implements ITransactionHandler {
 
         if (sender.secondPublicKey) {
             // Ensure the database wallet already has a 2nd signature, in case we checked a pool wallet.
-            if (databaseWalletManager) {
-                const dbSender: State.IWallet = databaseWalletManager.findByPublicKey(data.senderPublicKey);
-                if (!dbSender.secondPublicKey) {
-                    throw new UnexpectedSecondSignatureError();
-                }
+            const dbSender: State.IWallet = databaseWalletManager.findByPublicKey(data.senderPublicKey);
+            if (!dbSender.secondPublicKey) {
+                throw new UnexpectedSecondSignatureError();
             }
 
             if (!Transactions.Verifier.verifySecondSignature(data, sender.secondPublicKey)) {
@@ -81,11 +79,9 @@ export abstract class TransactionHandler implements ITransactionHandler {
 
         if (sender.multisignature) {
             // Ensure the database wallet already has a multi signature, in case we checked a pool wallet.
-            if (databaseWalletManager) {
-                const dbSender: State.IWallet = databaseWalletManager.findByPublicKey(data.senderPublicKey);
-                if (!dbSender.multisignature) {
-                    throw new UnexpectedMultiSignatureError();
-                }
+            const dbSender: State.IWallet = databaseWalletManager.findByPublicKey(data.senderPublicKey);
+            if (!dbSender.multisignature) {
+                throw new UnexpectedMultiSignatureError();
             }
 
             if (!sender.verifySignatures(data, sender.multisignature)) {
@@ -116,7 +112,7 @@ export abstract class TransactionHandler implements ITransactionHandler {
             );
         }
 
-        this.canBeApplied(transaction, sender);
+        this.canBeApplied(transaction, sender, walletManager);
 
         const newBalance: Utils.BigNumber = sender.balance.minus(d.amount).minus(d.fee);
         if (newBalance.isNegative()) {

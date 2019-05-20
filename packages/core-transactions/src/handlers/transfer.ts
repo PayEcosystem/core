@@ -20,7 +20,7 @@ export class TransferTransactionHandler extends TransactionHandler {
     public canBeApplied(
         transaction: Interfaces.ITransaction,
         sender: State.IWallet,
-        databaseWalletManager?: State.IWalletManager,
+        databaseWalletManager: State.IWalletManager,
     ): void {
         super.canBeApplied(transaction, sender, databaseWalletManager);
     }
