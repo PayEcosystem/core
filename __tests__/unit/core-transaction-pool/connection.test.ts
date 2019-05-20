@@ -596,7 +596,7 @@ describe("Connection", () => {
         let mockWallet;
         beforeEach(() => {
             const transactionHandler = Handlers.Registry.get(TransactionTypes.Transfer);
-            jest.spyOn(transactionHandler, "canBeApplied").mockReturnValue(true);
+            jest.spyOn(transactionHandler, "canBeApplied").mockReturnValue();
 
             mockWallet = new Wallets.Wallet(block2.transactions[0].recipientId);
             mockWallet.balance = Utils.BigNumber.make(1e12);
@@ -663,7 +663,7 @@ describe("Connection", () => {
         const findByPublicKeyWallet = new Wallets.Wallet("thisIsAnAddressIMadeUpJustLikeThis");
         beforeEach(() => {
             const transactionHandler = Handlers.Registry.get(TransactionTypes.Transfer);
-            canBeApplied = jest.spyOn(transactionHandler, "canBeApplied").mockReturnValue(true);
+            canBeApplied = jest.spyOn(transactionHandler, "canBeApplied").mockReturnValue();
             applyToSender = jest.spyOn(transactionHandler, "applyToSender").mockReturnValue();
 
             jest.spyOn(connection.walletManager, "has").mockReturnValue(true);
