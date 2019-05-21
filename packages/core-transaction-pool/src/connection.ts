@@ -467,15 +467,50 @@ export class Connection implements TransactionPool.IConnection {
         this.purgeTransactions("transaction.expired", this.memory.getExpired(this.options.maxTransactionAge));
     }
 
+    /**
+     * Remove all provided transactions plus any transactions from the same senders with higher nonces.
+     */
     private purgeTransactions(event: string, transactions: Interfaces.ITransaction[]): void {
+        const lowestNonceBySender = {};
         for (const transaction of transactions) {
-            this.emitter.emit(event, transaction.data);
+            const senderPublicKey: string = transaction.data.senderPublicKey
+            if (lowestNonceBySender[senderPublicKey] === undefined) {
+                lowestNonceBySender[senderPublicKey] = transaction.data.nonce;
+            } else if (lowestNonceBySender[senderPublicKey].isGreaterThan(transaction.data.nonce)) {
+                lowestNonceBySender[senderPublicKey] = transaction.data.nonce;
+            }
+        }
 
-            this.walletManager.revertTransactionForSender(transaction);
+        // Revert all transactions that have bigger or equal nonces than the ones in
+        // lowestNonceBySender in order from bigger nonce to smaller nonce.
 
-            this.memory.forget(transaction.id, transaction.data.senderPublicKey);
+        for (const senderPublicKey of Object.keys(lowestNonceBySender)) {
+            const allTxFromSender = Array.from(this.memory.getBySender(senderPublicKey));
+            allTxFromSender.sort((a, b) => {
+                if (a.data.nonce.isGreaterThan(b.data.nonce)) {
+                    return -1;
+                }
 
-            this.syncToPersistentStorageIfNecessary();
+                if (a.data.nonce.isLessThan(b.data.nonce)) {
+                    return 1;
+                }
+
+                return 0;
+            });
+
+            for (const transaction of allTxFromSender) {
+                this.emitter.emit(event, transaction.data);
+
+                this.walletManager.revertTransactionForSender(transaction);
+
+                this.memory.forget(transaction.id, transaction.data.senderPublicKey);
+
+                this.syncToPersistentStorageIfNecessary();
+
+                if (transaction.data.nonce.isEqualTo(lowestNonceBySender[transaction.data.senderPublicKey])) {
+                    break;
+                }
+            }
         }
     }
 }
