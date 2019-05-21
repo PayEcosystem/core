@@ -351,7 +351,9 @@ export class Connection implements TransactionPool.IConnection {
     }
 
     public purgeByBlock(block: Interfaces.IBlock): void {
-        for (const transaction of block.transactions) {
+        // Revert in reverse order so that we don't violate nonce rules.
+        for (let i = block.transactions.length - 1; i >= 0; i--) {
+            const transaction = block.transactions[i];
             if (this.has(transaction.id)) {
                 this.removeTransaction(transaction);
 
