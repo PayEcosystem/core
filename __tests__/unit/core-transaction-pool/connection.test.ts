@@ -252,7 +252,6 @@ describe("Connection", () => {
 
             transactions[3] = mockData.dummy2;
 
-            console.error(JSON.stringify(transactions, null, 4));
             const { added, notAdded } = connection.addTransactions(transactions);
 
             expect(added).toHaveLength(4);
