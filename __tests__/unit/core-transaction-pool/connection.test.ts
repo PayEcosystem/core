@@ -806,10 +806,13 @@ describe("Connection", () => {
 
     describe("stress", () => {
         beforeAll(() => {
-            const mockWallet = new Wallets.Wallet(delegates[0].address);
-            jest.spyOn(connection.walletManager, "findByPublicKey").mockReturnValue(mockWallet);
             jest.spyOn(connection.walletManager, "senderIsKnownAndTrxCanBeApplied").mockReturnValue();
         });
+
+        beforeEach(() => {
+            connection.walletManager.reset();
+        });
+
         afterAll(() => {
             jest.restoreAllMocks();
         });
@@ -819,15 +822,26 @@ describe("Connection", () => {
                 nDifferentSenders = n;
             }
 
+            // We use a predictable random number calculator in order to get
+            // a deterministic test.
+            const rand = randomSeed.create("0");
+
             const testTransactions: Interfaces.ITransaction[] = [];
 
             for (let i = 0; i < n; i++) {
+                const passphrase = String(i % nDifferentSenders);
+
                 const transaction = TransactionFactory
                     .transfer("AFzQCx5YpGg5vKMBg4xbuYbqkhvMkKfKe5", i + 1)
                     .withNetwork("unitnet")
-                    .withPassphrase(String(i % nDifferentSenders))
+                    .withPassphrase(passphrase)
+                    .withFee(rand.intBetween(0.002 * SATOSHI, 2 * SATOSHI))
                     .build()[0];
                 testTransactions.push(transaction)
+
+                const wallet = new Wallets.Wallet(Identities.Address.fromPassphrase(passphrase));
+                wallet.balance = Utils.BigNumber.make(1e14);
+                connection.walletManager.reindex(wallet);
             }
 
             return testTransactions;
@@ -883,16 +897,7 @@ describe("Connection", () => {
         it("add many then get first few", () => {
             const nAdd = 2000;
 
-            // We use a predictable random number calculator in order to get
-            // a deterministic test.
-            const rand = randomSeed.create("0");
-
             const testTransactions: Interfaces.ITransaction[] = generateTestTransactions(nAdd);
-            for (let i = 0; i < nAdd; i++) {
-                // This will invalidate the transactions' signatures, not good, but irrelevant for this test.
-                testTransactions[i].data.fee = Utils.BigNumber.make(rand.intBetween(0.002 * SATOSHI, 2 * SATOSHI));
-                testTransactions[i].serialized = Transactions.Utils.toBytes(testTransactions[i].data);
-            }
 
             // console.time(`time to add ${nAdd}`)
             connection.addTransactions(testTransactions);
@@ -926,34 +931,31 @@ describe("Connection", () => {
             // an unique nonce for that sender.
             const nonces = [];
             for (let i = 0; i < Math.ceil(nTransactions / nDifferentSenders); i++) {
-                nonces.push(i);
+                nonces.push(Utils.BigNumber.make(i));
             }
-
-            const rand = randomSeed.create("0");
 
             const testTransactions: Interfaces.ITransaction[] =
                 generateTestTransactions(nTransactions, nDifferentSenders);
 
             const noncesBySender = {};
 
-            for (let i = 0; i < nTransactions; i++) {
-                const fee = rand.intBetween(0.002 * SATOSHI, 2 * SATOSHI);
-                testTransactions[i].data.fee = Utils.BigNumber.make(fee);
-
-                const sender = testTransactions[i].data.senderPublicKey;
+            for (const t of testTransactions) {
+                const sender = t.data.senderPublicKey;
 
                 if (noncesBySender[sender] === undefined) {
                     noncesBySender[sender] = shuffle(nonces);
                 }
-                const nonce = noncesBySender[sender].shift();
-                testTransactions[i].data.nonce = Utils.BigNumber.make(nonce);
 
-                testTransactions[i].serialized = Transactions.Utils.toBytes(testTransactions[i].data);
+                t.data.nonce = noncesBySender[sender].shift();
+
+                t.serialized = Transactions.Utils.toBytes(t.data);
             }
 
             // const timerLabelAdd = `time to add ${testTransactions.length} transactions`;
             // console.time(timerLabelAdd);
-            connection.addTransactions(testTransactions);
+            for (const t of testTransactions) {
+                memory.remember(t, maxTransactionAge);
+            }
             // console.timeEnd(timerLabelAdd);
 
             // const timerLabelSort = `time to sort ${testTransactions.length} transactions`;
