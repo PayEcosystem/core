@@ -13,6 +13,7 @@ import {
     UnexpectedSecondSignatureError,
 } from "../errors";
 import { ITransactionHandler } from "../interfaces";
+import assert from "assert";
 
 export abstract class TransactionHandler implements ITransactionHandler {
     public abstract getConstructor(): Transactions.TransactionConstructor;
@@ -114,11 +115,6 @@ export abstract class TransactionHandler implements ITransactionHandler {
 
         this.canBeApplied(transaction, sender, walletManager);
 
-        const newBalance: Utils.BigNumber = sender.balance.minus(data.amount).minus(data.fee);
-        if (newBalance.isNegative()) {
-            throw new InsufficientBalanceError();
-        }
-
         if (data.version > 1) {
             if (!sender.nonce.plus(1).isEqualTo(data.nonce)) {
                 throw new UnexpectedNonceError(data.nonce, sender.nonce, false);
@@ -126,6 +122,9 @@ export abstract class TransactionHandler implements ITransactionHandler {
 
             sender.nonce = data.nonce;
         }
+
+        const newBalance: Utils.BigNumber = sender.balance.minus(data.amount).minus(data.fee);
+        assert(!newBalance.isNegative());
 
         sender.balance = newBalance;
     }
