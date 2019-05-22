@@ -213,6 +213,7 @@ describe("Connection", () => {
     describe("addTransactions with expiration", () => {
         beforeAll(() => {
             jest.spyOn(connection.walletManager, "senderIsKnownAndTrxCanBeApplied").mockReturnValue();
+            connection.walletManager.reset();
         });
         afterAll(() => {
             jest.restoreAllMocks();
