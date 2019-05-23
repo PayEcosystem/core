@@ -129,9 +129,9 @@ export class DelegateRegistrationTransactionHandler extends TransactionHandler {
         sender.username = undefined;
     }
 
-    public applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-    }
+    // tslint:disable-next-line:no-empty
+    public applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {}
 
-    public revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-    }
+    // tslint:disable-next-line:no-empty
+    public revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {}
 }

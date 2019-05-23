@@ -3,6 +3,7 @@
 
 import { Database, EventEmitter, State, TransactionPool } from "@arkecosystem/core-interfaces";
 import { Enums, Interfaces, Managers, Transactions, Utils } from "@arkecosystem/crypto";
+import assert from "assert";
 import {
     InsufficientBalanceError,
     InvalidMultiSignatureError,
@@ -13,7 +14,6 @@ import {
     UnexpectedSecondSignatureError,
 } from "../errors";
 import { ITransactionHandler } from "../interfaces";
-import assert from "assert";
 
 export abstract class TransactionHandler implements ITransactionHandler {
     public abstract getConstructor(): Transactions.TransactionConstructor;

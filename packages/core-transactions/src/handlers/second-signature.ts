@@ -58,9 +58,9 @@ export class SecondSignatureTransactionHandler extends TransactionHandler {
         walletManager.findByPublicKey(transaction.data.senderPublicKey).secondPublicKey = undefined;
     }
 
-    public applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-    }
+    // tslint:disable-next-line:no-empty
+    public applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {}
 
-    public revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {
-    }
+    // tslint:disable-next-line:no-empty
+    public revertForRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {}
 }
