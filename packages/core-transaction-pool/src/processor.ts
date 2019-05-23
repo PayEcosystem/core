@@ -94,9 +94,6 @@ export class Processor implements TransactionPool.IProcessor {
 
             this.accept.delete(id);
             this.broadcast.delete(id);
-
-            // Transaction got dropped, so decrement nonce again.
-            this.walletManager.decrementNonce(this.transactions.find(tx => tx.id === id).senderPublicKey);
         }
     }
 
@@ -227,15 +224,7 @@ export class Processor implements TransactionPool.IProcessor {
     }
 
     private addTransactionsToPool(): void {
-        const acceptedTransactions = Array.from(this.accept.values());
-        // We need to decrement the nonce of the sender, since canBeApplied
-        // is called on all transactions before they are actually applied
-        // and the nonce lags behind.
-        for (const accepted of acceptedTransactions) {
-            this.walletManager.decrementNonce(accepted.data.senderPublicKey);
-        }
-
-        const { notAdded }: ITransactionsProcessed = this.pool.addTransactions(acceptedTransactions);
+        const { notAdded }: ITransactionsProcessed = this.pool.addTransactions(Array.from(this.accept.values()));
 
         for (const item of notAdded) {
             this.accept.delete(item.transaction.id);

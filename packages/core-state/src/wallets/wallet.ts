@@ -79,15 +79,6 @@ export class Wallet implements State.IWallet {
         return false;
     }
 
-    public incrementNonce(): void {
-        this.nonce = this.nonce.plus(1);
-    }
-
-    public decrementNonce(): void {
-        assert(this.nonce.isGreaterThanOrEqualTo(1));
-        this.nonce = this.nonce.minus(1);
-    }
-
     public verifySignatures(
         transaction: Interfaces.ITransactionData,
         multiSignature?: Interfaces.IMultiSignatureAsset,
