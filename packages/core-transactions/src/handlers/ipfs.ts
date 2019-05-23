@@ -16,7 +16,7 @@ export class IpfsTransactionHandler extends TransactionHandler {
         }
     }
 
-    public canBeApplied(
+    public throwIfCannotBeApplied(
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
@@ -26,7 +26,7 @@ export class IpfsTransactionHandler extends TransactionHandler {
         //     throw new IpfsHashAlreadyExists();
         // }
 
-        super.canBeApplied(transaction, wallet, databaseWalletManager);
+        super.throwIfCannotBeApplied(transaction, wallet, databaseWalletManager);
     }
 
     public canEnterTransactionPool(

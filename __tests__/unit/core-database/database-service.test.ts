@@ -216,8 +216,8 @@ describe("Database Service", () => {
 
             // Prepare sender wallet
             const transactionHandler = Handlers.Registry.get(TransactionTypes.Transfer);
-            const originalApply = transactionHandler.canBeApplied;
-            transactionHandler.canBeApplied = jest.fn(() => true);
+            const originalApply = transactionHandler.throwIfCannotBeApplied;
+            transactionHandler.throwIfCannotBeApplied = jest.fn(() => {});
 
             const sender = new Wallet(keys.address);
             sender.publicKey = keys.publicKey;
@@ -291,7 +291,7 @@ describe("Database Service", () => {
                 expect(restoredDelegatesRound2[i].publicKey).toBe(delegatesRound2[i].publicKey);
             }
 
-            transactionHandler.canBeApplied = originalApply;
+            transactionHandler.throwIfCannotBeApplied = originalApply;
         });
     });
 });

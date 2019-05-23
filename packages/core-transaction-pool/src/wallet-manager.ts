@@ -42,7 +42,7 @@ export class WalletManager extends Wallets.WalletManager {
 
         const sender: State.IWallet = this.findByPublicKey(senderPublicKey);
 
-        Handlers.Registry.get(transaction.type).canBeApplied(transaction, sender, this.databaseService.walletManager);
+        Handlers.Registry.get(transaction.type).throwIfCannotBeApplied(transaction, sender, this.databaseService.walletManager);
     }
 
     public revertTransactionForSender(transaction: Interfaces.ITransaction): void {

@@ -17,12 +17,12 @@ export class TransferTransactionHandler extends TransactionHandler {
         }
     }
 
-    public canBeApplied(
+    public throwIfCannotBeApplied(
         transaction: Interfaces.ITransaction,
         sender: State.IWallet,
         databaseWalletManager: State.IWalletManager,
     ): void {
-        super.canBeApplied(transaction, sender, databaseWalletManager);
+        super.throwIfCannotBeApplied(transaction, sender, databaseWalletManager);
     }
 
     public hasVendorField(): boolean {

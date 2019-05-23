@@ -36,7 +36,7 @@ export abstract class TransactionHandler implements ITransactionHandler {
         return transaction.isVerified;
     }
 
-    public canBeApplied(
+    public throwIfCannotBeApplied(
         transaction: Interfaces.ITransaction,
         sender: State.IWallet,
         databaseWalletManager: State.IWalletManager,
@@ -113,7 +113,7 @@ export abstract class TransactionHandler implements ITransactionHandler {
             );
         }
 
-        this.canBeApplied(transaction, sender, walletManager);
+        this.throwIfCannotBeApplied(transaction, sender, walletManager);
 
         if (data.version > 1) {
             if (!sender.nonce.plus(1).isEqualTo(data.nonce)) {

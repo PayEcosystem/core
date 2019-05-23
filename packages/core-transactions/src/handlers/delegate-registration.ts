@@ -42,7 +42,7 @@ export class DelegateRegistrationTransactionHandler extends TransactionHandler {
         walletManager.buildDelegateRanking();
     }
 
-    public canBeApplied(
+    public throwIfCannotBeApplied(
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
@@ -66,7 +66,7 @@ export class DelegateRegistrationTransactionHandler extends TransactionHandler {
             throw new WalletUsernameAlreadyRegisteredError(username);
         }
 
-        super.canBeApplied(transaction, wallet, databaseWalletManager);
+        super.throwIfCannotBeApplied(transaction, wallet, databaseWalletManager);
     }
 
     public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {

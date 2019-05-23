@@ -8,7 +8,7 @@ export interface ITransactionHandler {
 
     verify(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): boolean;
 
-    canBeApplied(
+    throwIfCannotBeApplied(
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,

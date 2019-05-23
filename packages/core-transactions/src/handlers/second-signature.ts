@@ -17,7 +17,7 @@ export class SecondSignatureTransactionHandler extends TransactionHandler {
         }
     }
 
-    public canBeApplied(
+    public throwIfCannotBeApplied(
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
@@ -30,7 +30,7 @@ export class SecondSignatureTransactionHandler extends TransactionHandler {
             throw new NotSupportedForMultiSignatureWalletError();
         }
 
-        super.canBeApplied(transaction, wallet, databaseWalletManager);
+        super.throwIfCannotBeApplied(transaction, wallet, databaseWalletManager);
     }
 
     public canEnterTransactionPool(

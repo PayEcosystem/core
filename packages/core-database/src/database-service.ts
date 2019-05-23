@@ -568,7 +568,7 @@ export class DatabaseService implements Database.IDatabaseService {
         const dbTransaction = await this.getTransaction(transaction.data.id);
 
         try {
-            transactionHandler.canBeApplied(transaction, sender, this.walletManager);
+            transactionHandler.throwIfCannotBeApplied(transaction, sender, this.walletManager);
             return !dbTransaction;
         } catch {
             return false;

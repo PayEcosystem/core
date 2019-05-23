@@ -11,12 +11,12 @@ export class MultiPaymentTransactionHandler extends TransactionHandler {
         return;
     }
 
-    public canBeApplied(
+    public throwIfCannotBeApplied(
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
     ): void {
-        super.canBeApplied(transaction, wallet, databaseWalletManager);
+        super.throwIfCannotBeApplied(transaction, wallet, databaseWalletManager);
     }
 
     public applyToRecipient(transaction: Interfaces.ITransaction, walletManager: State.IWalletManager): void {

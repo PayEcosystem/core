@@ -37,13 +37,12 @@ export class VoteTransactionHandler extends TransactionHandler {
         walletManager.buildVoteBalances();
     }
 
-    public canBeApplied(
+    public throwIfCannotBeApplied(
         transaction: Interfaces.ITransaction,
         wallet: State.IWallet,
         databaseWalletManager: State.IWalletManager,
     ): void {
-        const { data }: Interfaces.ITransaction = transaction;
-        const vote: string = data.asset.votes[0];
+        const vote: string = transaction.data.asset.votes[0];
 
         if (vote.startsWith("+")) {
             if (wallet.vote) {
@@ -67,7 +66,7 @@ export class VoteTransactionHandler extends TransactionHandler {
             throw new VotedForResignedDelegateError(vote);
         }
 
-        super.canBeApplied(transaction, wallet, databaseWalletManager);
+        super.throwIfCannotBeApplied(transaction, wallet, databaseWalletManager);
     }
 
     public emitEvents(transaction: Interfaces.ITransaction, emitter: EventEmitter.EventEmitter): void {
