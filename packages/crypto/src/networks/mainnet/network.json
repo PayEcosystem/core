@@ -1,18 +1,18 @@
 {
-    "name": "mainnet",
-    "messagePrefix": "ARK message:\n",
-    "bip32": {
-        "public": 46090600,
-        "private": 46089520
-    },
-    "pubKeyHash": 23,
-    "nethash": "6e84d08bd299ed97c212c886c98a57e36545c8f5d645ca7eeae63a8bd62d8988",
-    "wif": 170,
-    "slip44": 111,
-    "aip20": 0,
-    "client": {
-        "token": "ARK",
-        "symbol": "Ѧ",
-        "explorer": "https://explorer.ark.io"
-    }
+  "name": "mainnet",
+  "messagePrefix": "XPAY message:\n",
+  "bip32": {
+    "public": 46090600,
+    "private": 46089520
+  },
+  "pubKeyHash": 75,
+  "nethash": "ea63bcdf20820f03bad632b43ab9a6b2fe37dfdae4a33b7d445f37142f148e33",
+  "wif": 94,
+  "slip44": 111,
+  "aip20": 0,
+  "client": {
+    "token": "XPAY",
+    "symbol": "₿",
+    "explorer": "http://0.0.0.0:4200"
+  }
 }

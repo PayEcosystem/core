@@ -201,7 +201,33 @@ success "Installed system updates!"
 
 heading "Installing ARK Core..."
 
-yarn global add @arkecosystem/core
+shopt -s expand_aliases
+alias ark="$HOME/core-bridgechain/packages/core/bin/run"
+echo 'alias pay="$HOME/core-bridgechain/packages/core/bin/run"' >> ~/.bashrc
+rm -rf "$HOME/core-bridgechain"
+git clone "https://github.com/PayEcosystem/core.git" -b chore/bridgechain-changes "$HOME/core-bridgechain" || FAILED="Y"
+
+if [ "$FAILED" == "Y" ]; then
+    FAILED="N"
+    git clone "https://github.com/PayEcosystem/core.git" "$HOME/core-bridgechain" || FAILED="Y"
+
+    if [ "$FAILED" == "Y" ]; then
+        echo "Failed to fetch core repo with origin 'https://github.com/PayEcosystem/core.git'"
+
+        exit 1
+    fi
+fi
+
+cd "$HOME/core-bridgechain"
+YARN_SETUP="N"
+while [ "$YARN_SETUP" == "N" ]; do
+  YARN_SETUP="Y"
+  yarn setup || YARN_SETUP="N"
+done
+rm -rf "$HOME/.config/@pay"
+rm -rf "$HOME/.config/@PAY"
+rm -rf "$HOME/.config/PAY-core"
+
 echo 'export PATH=$(yarn global bin):$PATH' >> ~/.bashrc
 export PATH=$(yarn global bin):$PATH
 ark config:publish
